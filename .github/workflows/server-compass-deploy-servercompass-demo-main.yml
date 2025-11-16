@@ -1,0 +1,56 @@
+name: Deploy to VPS - servercompass-demo-main
+
+on:
+  push:
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    # Only deploy if the push is to the configured branch
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+      - name: Deploy to VPS
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST_SERVERCOMPASS_DEMO_MAIN }}
+          username: ${{ secrets.VPS_USER_SERVERCOMPASS_DEMO_MAIN }}
+          key: ${{ secrets.VPS_SSH_KEY_SERVERCOMPASS_DEMO_MAIN }}
+          port: ${{ secrets.VPS_PORT_SERVERCOMPASS_DEMO_MAIN }}
+          script: |
+            set -e
+            echo "🚀 Starting deployment for servercompass-demo-main..."
+
+            # Navigate to app directory
+            cd /root/servercompass-demo-main
+
+            # Fetch and reset to latest
+            echo "📥 Fetching latest code from main..."
+            git fetch origin main
+            git reset --hard origin/main
+
+            # Show current commit
+            echo "📝 Deploying commit: $(git rev-parse --short HEAD) - $(git log -1 --pretty=%B)"
+
+            # Install dependencies
+            echo "📦 Installing dependencies..."
+            npm install
+
+            # Build application
+            echo "🔨 Building application..."
+            npm install && npm run build
+
+            # Reload PM2 process
+            echo "♻️  Reloading PM2 process..."
+            pm2 reload servercompass-demo-main || pm2 restart servercompass-demo-main || {
+              echo "⚠️  PM2 process not found, starting new process..."
+              pm2 start npm --name "servercompass-demo-main" -- start
+            }
+
+            # Save PM2 configuration
+            pm2 save --force
+
+            echo "✅ Deployment completed successfully at $(date)"
+            echo "📊 PM2 Status:"
+            pm2 info servercompass-demo-main --no-daemon
