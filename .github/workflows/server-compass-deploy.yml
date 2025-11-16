@@ -1,4 +1,4 @@
-name: Deploy to VPS - servercompass-demo2
+name: Deploy to VPS - servercompass-demo5
 
 on:
   push:
@@ -14,16 +14,16 @@ jobs:
       - name: Deploy to VPS
         uses: appleboy/ssh-action@v1.0.3
         with:
-          host: ${{ secrets.VPS_HOST_SERVERCOMPASS_DEMO2 }}
-          username: ${{ secrets.VPS_USER_SERVERCOMPASS_DEMO2 }}
-          key: ${{ secrets.VPS_SSH_KEY_SERVERCOMPASS_DEMO2 }}
-          port: ${{ secrets.VPS_PORT_SERVERCOMPASS_DEMO2 }}
+          host: ${{ secrets.VPS_HOST_SERVERCOMPASS_DEMO5 }}
+          username: ${{ secrets.VPS_USER_SERVERCOMPASS_DEMO5 }}
+          key: ${{ secrets.VPS_SSH_KEY_SERVERCOMPASS_DEMO5 }}
+          port: ${{ secrets.VPS_PORT_SERVERCOMPASS_DEMO5 }}
           script: |
             set -e
-            echo "🚀 Starting deployment for servercompass-demo2..."
+            echo "🚀 Starting deployment for servercompass-demo5..."
 
             # Navigate to app directory
-            cd /root/servercompass-demo2
+            cd /root/servercompass-demo5
 
             # Fetch and reset to latest
             echo "📥 Fetching latest code from main..."
@@ -43,9 +43,9 @@ jobs:
 
             # Reload PM2 process
             echo "♻️  Reloading PM2 process..."
-            pm2 reload servercompass-demo2 || pm2 restart servercompass-demo2 || {
+            pm2 reload servercompass-demo5 || pm2 restart servercompass-demo5 || {
               echo "⚠️  PM2 process not found, starting new process..."
-              pm2 start npm --name "servercompass-demo2" -- start
+              pm2 start npm --name "servercompass-demo5" -- start
             }
 
             # Save PM2 configuration
@@ -53,4 +53,4 @@ jobs:
 
             echo "✅ Deployment completed successfully at $(date)"
             echo "📊 PM2 Status:"
-            pm2 info servercompass-demo2 --no-daemon
+            pm2 info servercompass-demo5 --no-daemon
