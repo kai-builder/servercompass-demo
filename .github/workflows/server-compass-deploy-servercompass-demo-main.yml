@@ -1,29 +1,29 @@
-name: Deploy to VPS - servercompass-demo-2
+name: Deploy to VPS - servercompass-demo-main
 
 on:
   push:
-    branches:
-      - main
   workflow_dispatch:
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    # Only deploy if the push is to the configured branch
+    if: github.ref == 'refs/heads/main'
 
     steps:
       - name: Deploy to VPS
         uses: appleboy/ssh-action@v1.0.3
         with:
-          host: ${{ secrets.VPS_HOST_SERVERCOMPASS_DEMO_2 }}
-          username: ${{ secrets.VPS_USER_SERVERCOMPASS_DEMO_2 }}
-          key: ${{ secrets.VPS_SSH_KEY_SERVERCOMPASS_DEMO_2 }}
-          port: ${{ secrets.VPS_PORT_SERVERCOMPASS_DEMO_2 }}
+          host: ${{ secrets.VPS_HOST_SERVERCOMPASS_DEMO_MAIN }}
+          username: ${{ secrets.VPS_USER_SERVERCOMPASS_DEMO_MAIN }}
+          key: ${{ secrets.VPS_SSH_KEY_SERVERCOMPASS_DEMO_MAIN }}
+          port: ${{ secrets.VPS_PORT_SERVERCOMPASS_DEMO_MAIN }}
           script: |
             set -e
-            echo "🚀 Starting deployment for servercompass-demo-2..."
+            echo "🚀 Starting deployment for servercompass-demo-main..."
 
             # Navigate to app directory
-            cd /root/servercompass-demo-2
+            cd /root/servercompass-demo-main
 
             # Fetch and reset to latest
             echo "📥 Fetching latest code from main..."
@@ -43,9 +43,9 @@ jobs:
 
             # Reload PM2 process
             echo "♻️  Reloading PM2 process..."
-            pm2 reload servercompass-demo-2 || pm2 restart servercompass-demo-2 || {
+            pm2 reload servercompass-demo-main || pm2 restart servercompass-demo-main || {
               echo "⚠️  PM2 process not found, starting new process..."
-              pm2 start npm --name "servercompass-demo-2" -- start
+              pm2 start npm --name "servercompass-demo-main" -- start
             }
 
             # Save PM2 configuration
@@ -53,4 +53,4 @@ jobs:
 
             echo "✅ Deployment completed successfully at $(date)"
             echo "📊 PM2 Status:"
-            pm2 info servercompass-demo-2 --no-daemon
+            pm2 info servercompass-demo-main --no-daemon
