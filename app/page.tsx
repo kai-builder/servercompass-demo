@@ -12,7 +12,7 @@ export default function Home() {
         <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 md:p-12">
           <div className="text-center mb-12">
             <h1 className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white mb-4">
-              ServerCompass Demo test auto deploy - Branch Production New update 22
+              ServerCompass Demo test auto deploy - Branch Production Final test
             </h1>
             <p className="text-lg text-gray-600 dark:text-gray-300">
               Sample Next.js deployment with environment variables
