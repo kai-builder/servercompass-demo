@@ -75,14 +75,38 @@ jobs:
             # The key is already in use (we're connected), but ensure it's persisted
             echo "Deployment key already active via GitHub Actions SSH"
 
-            # Restart Docker daemon to ensure iptables chains are properly initialized
-            echo "🔄 Restarting Docker daemon..."
-            sudo systemctl restart docker
-            sleep 3
+            # Ensure Docker is available and restart if using systemd
+            echo "🐳 Checking Docker installation..."
+            if command -v docker &> /dev/null; then
+              echo "✅ Docker is installed"
 
-            # Clean up orphaned networks that might cause iptables conflicts
-            echo "🧹 Cleaning up orphaned Docker networks..."
-            docker network prune -f || true
+              # Restart Docker daemon only if it's managed by systemd
+              if systemctl is-active --quiet docker 2>/dev/null; then
+                echo "🔄 Restarting Docker daemon to ensure iptables chains are initialized..."
+                sudo systemctl restart docker
+                sleep 3
+              elif systemctl is-enabled --quiet docker 2>/dev/null; then
+                echo "🔄 Starting Docker daemon..."
+                sudo systemctl start docker
+                sleep 3
+              else
+                echo "ℹ️  Docker is not managed by systemd, skipping restart"
+              fi
+
+              # Verify Docker is running
+              if ! docker info &> /dev/null; then
+                echo "❌ Docker is not running. Please install and start Docker on this server."
+                exit 1
+              fi
+
+              # Clean up orphaned networks that might cause iptables conflicts
+              echo "🧹 Cleaning up orphaned Docker networks..."
+              docker network prune -f || true
+            else
+              echo "❌ Docker is not installed. Please install Docker on this server."
+              echo "💡 Install instructions: https://docs.docker.com/engine/install/"
+              exit 1
+            fi
 
             # Navigate to app directory and ensure it exists
             mkdir -p /root/server-compass/apps/servercompass-demo
