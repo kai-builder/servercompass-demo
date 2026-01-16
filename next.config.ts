@@ -1,4 +1,4 @@
-import type { NextConfig } from "nexttestloi";
+import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   output: 'standalone',
