@@ -1,0 +1,138 @@
+name: Docker Deploy - servercompass-demo
+
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - '.github/workflows/server-compass-docker-servercompass-demo.yml'
+      - 'Dockerfile'
+      - 'docker-compose.yml'
+      - 'docker-compose.yaml'
+      - 'compose.yml'
+      - 'compose.yaml'
+      - '.dockerignore'
+  workflow_dispatch:
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+concurrency:
+  group: server-compass-servercompass-demo-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      image: ${{ steps.meta.outputs.tags }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Log in to Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=sha,prefix=
+            type=raw,value=latest
+
+      - name: Build and push
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          build-args: |
+          NODE_ENV=production
+
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to VPS
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST_SERVERCOMPASS_DEMO }}
+          username: ${{ secrets.VPS_USER_SERVERCOMPASS_DEMO }}
+          key: ${{ secrets.VPS_SSH_KEY_SERVERCOMPASS_DEMO }}
+          port: ${{ secrets.VPS_PORT_SERVERCOMPASS_DEMO }}
+          fingerprint: ${{ secrets.VPS_HOST_FINGERPRINT_SERVERCOMPASS_DEMO }}
+          script: |
+            set -e
+            echo "Starting Docker deployment for servercompass-demo..."
+
+            if ! command -v docker >/dev/null 2>&1; then
+              echo "Docker is not installed on this server. Please install Docker and Docker Compose first."
+              exit 1
+            fi
+
+            if ! docker compose version >/dev/null 2>&1; then
+              echo "Docker Compose v2 is required (docker compose). Please install Docker Compose."
+              exit 1
+            fi
+
+            mkdir -p /root/server-compass/apps/servercompass-demo
+            cd /root/server-compass/apps/servercompass-demo
+
+            echo "Creating docker-compose.yml..."
+            cat > docker-compose.yml << 'COMPOSE_EOF'
+services:
+  servercompass-demo:
+    image: ghcr.io/${{ github.repository }}:latest
+    container_name: servercompass-demo-app
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env
+    restart: unless-stopped
+COMPOSE_EOF
+
+            touch .env
+
+            echo "Logging in to GitHub Container Registry..."
+            echo ${{ secrets.GHCR_TOKEN_SERVERCOMPASS_DEMO }} | docker login ghcr.io -u ${{ secrets.GHCR_USER_SERVERCOMPASS_DEMO }} --password-stdin
+
+            echo "Pulling latest Docker images..."
+            docker compose pull
+
+            echo "Stopping old containers..."
+            docker compose down
+
+            echo "Starting new containers..."
+            docker compose up -d
+
+            echo "Cleaning up old images..."
+            docker image prune -f --filter "until=24h" || true
+
+            echo "Deployment completed successfully at $(date)"
+            echo "Container Status:"
+            docker compose ps
+
+            echo ""
+            echo "Checking container health..."
+            UNHEALTHY=$(docker compose ps --format json 2>/dev/null | jq -r 'select(.State != "running") | .Name' 2>/dev/null || docker compose ps | grep -E "Restarting|Exited" | awk '{print $1}')
+            if [ -n "$UNHEALTHY" ]; then
+              echo "Warning: Some containers may be unhealthy"
+              for container in $UNHEALTHY; do
+                echo ""
+                echo "Logs for $container:"
+                docker logs "$container" --tail 30 2>&1 || true
+              done
+            else
+              echo "All containers are running"
+            fi
