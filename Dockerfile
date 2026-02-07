@@ -18,11 +18,11 @@ ENV CI=$CI NIXPACKS_METADATA=$NIXPACKS_METADATA NODE_ENV=$NODE_ENV NPM_CONFIG_PR
 # install phase
 ENV NIXPACKS_PATH=/app/node_modules/.bin:$NIXPACKS_PATH
 COPY . /app/.
-RUN --mount=type=cache,id=EBSfcHvvkO4-/root/npm,target=/root/.npm npm ci
+RUN --mount=type=cache,id=5wYocq6zvQ-/root/npm,target=/root/.npm npm ci
 
 # build phase
 COPY . /app/.
-RUN --mount=type=cache,id=EBSfcHvvkO4-next/cache,target=/app/.next/cache --mount=type=cache,id=EBSfcHvvkO4-node_modules/cache,target=/app/node_modules/.cache npm run build
+RUN --mount=type=cache,id=5wYocq6zvQ-next/cache,target=/app/.next/cache --mount=type=cache,id=5wYocq6zvQ-node_modules/cache,target=/app/node_modules/.cache npm run build
 
 
 RUN printf '\nPATH=/app/node_modules/.bin:$PATH' >> /root/.profile
