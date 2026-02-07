@@ -151,9 +151,9 @@ jobs:
             # Create .env (prefer Server Compass-managed secret; fallback to existing server file)
             if [ -n "${{ secrets.ENV_FILE_SERVERCOMPASS_DEMO }}" ]; then
               echo "🧩 Writing .env from GitHub secret (ENV_FILE_SERVERCOMPASS_DEMO)..."
-              cat > .env << 'SERVER_COMPASS_ENV_FILE'
-              ${{ secrets.ENV_FILE_SERVERCOMPASS_DEMO }}
-              SERVER_COMPASS_ENV_FILE
+            cat > .env << 'SERVER_COMPASS_ENV_FILE'
+            ${{ secrets.ENV_FILE_SERVERCOMPASS_DEMO }}
+            SERVER_COMPASS_ENV_FILE
             elif [ -f .env ]; then
               echo "🧩 No env secret found. Keeping existing .env from server."
             else
