@@ -1,35 +1,34 @@
-FROM node:20-alpine AS deps
-WORKDIR /app
-COPY package.json package-lock.json* yarn.lock* pnpm-lock.yaml* ./
-RUN if [ -f yarn.lock ]; then yarn install --frozen-lockfile; \
-  elif [ -f package-lock.json ]; then npm ci; \
-  elif [ -f pnpm-lock.yaml ]; then corepack enable pnpm && pnpm i --frozen-lockfile; \
-  else echo "Lockfile not found." && npm install; \
-  fi
+FROM ghcr.io/railwayapp/nixpacks:ubuntu-1745885067
 
-FROM node:20-alpine AS builder
-WORKDIR /app
-COPY --from=deps /app/node_modules ./node_modules
-COPY . .
-RUN npm run build
+ENTRYPOINT ["/bin/bash", "-l", "-c"]
+WORKDIR /app/
+ENV DEBIAN_FRONTEND=noninteractive
+RUN apt-get update && curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && apt-get install -y nodejs
+ENV PATH="/usr/local/bin:/usr/bin:/bin:$PATH"
 
-FROM node:20-alpine AS runner
-WORKDIR /app
-ENV NODE_ENV=production
 
-RUN addgroup --system --gid 1001 nodejs
-RUN adduser --system --uid 1001 nextjs
 
-COPY --from=builder /app/public ./public
-COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
-COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
-USER nextjs
+ARG CI NIXPACKS_METADATA NODE_ENV NPM_CONFIG_PRODUCTION
+ENV CI=$CI NIXPACKS_METADATA=$NIXPACKS_METADATA NODE_ENV=$NODE_ENV NPM_CONFIG_PRODUCTION=$NPM_CONFIG_PRODUCTION
 
-EXPOSE 3000
+# setup phase
+# noop
 
-ENV PORT=3000
-ENV HOSTNAME="0.0.0.0"
+# install phase
+ENV NIXPACKS_PATH=/app/node_modules/.bin:$NIXPACKS_PATH
+COPY . /app/.
+RUN --mount=type=cache,id=Rc1VtUEvHc-/root/npm,target=/root/.npm npm ci
 
-CMD ["node", "server.js"]
-# this is a test Dockerfile test overwrite feature
+# build phase
+COPY . /app/.
+RUN --mount=type=cache,id=Rc1VtUEvHc-next/cache,target=/app/.next/cache --mount=type=cache,id=Rc1VtUEvHc-node_modules/cache,target=/app/node_modules/.cache npm run build
+
+
+RUN printf '\nPATH=/app/node_modules/.bin:$PATH' >> /root/.profile
+
+
+# start
+COPY . /app
+
+CMD ["npm run start"]
