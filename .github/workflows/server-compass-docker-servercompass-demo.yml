@@ -1,5 +1,9 @@
 name: Docker Deploy - servercompass-demo
 
+concurrency:
+  group: server-compass-docker-servercompass-demo-main
+  cancel-in-progress: true
+
 on:
   push:
     branches: [main]

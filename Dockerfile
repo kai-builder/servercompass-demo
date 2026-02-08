@@ -19,11 +19,13 @@ ENV CI=$CI NIXPACKS_METADATA=$NIXPACKS_METADATA NODE_ENV=$NODE_ENV NPM_CONFIG_PR
 # install phase
 ENV NIXPACKS_PATH=/app/node_modules/.bin:$NIXPACKS_PATH
 COPY . /app/.
-RUN --mount=type=cache,id=1aWtfqGkwYg-/root/npm,target=/root/.npm npm ci
+RUN --mount=type=cache,id=bS3WLuoj0-/root/npm,target=/root/.npm npm ci
 
 # build phase
 COPY . /app/.
-RUN --mount=type=cache,id=1aWtfqGkwYg-next/cache,target=/app/.next/cache --mount=type=cache,id=1aWtfqGkwYg-node_modules/cache,target=/app/node_modules/.cache npm run build
+ARG SERVER_COMPASS_NEXT_PUBLIC_ENV_B64
+RUN set -e; if [ -n "$SERVER_COMPASS_NEXT_PUBLIC_ENV_B64" ]; then echo "$SERVER_COMPASS_NEXT_PUBLIC_ENV_B64" | base64 -d > .env.production.local; fi
+RUN --mount=type=cache,id=bS3WLuoj0-next/cache,target=/app/.next/cache --mount=type=cache,id=bS3WLuoj0-node_modules/cache,target=/app/node_modules/.cache npm run build
 
 
 RUN printf '\nPATH=/app/node_modules/.bin:$PATH' >> /root/.profile
