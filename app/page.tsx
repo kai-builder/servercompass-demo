@@ -4,6 +4,9 @@ export default function Home() {
     "API URL": process.env.NEXT_PUBLIC_API_URL,
     "Environment": process.env.NEXT_PUBLIC_ENVIRONMENT,
     "Version": process.env.NEXT_PUBLIC_VERSION,
+    "database_url": process.env.DATABASE_URL,
+    "api_secret_key": process.env.API_SECRET_KEY,
+    "app_name_not_public": process.env.APP_NAME_NOT_PUBLIC,
   };
 
   return (
