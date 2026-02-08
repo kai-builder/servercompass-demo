@@ -50,6 +50,8 @@ jobs:
           file: Dockerfile
           push: true
           tags: ${{ steps.meta.outputs.tags }}
+          build-args: |
+            SERVER_COMPASS_NEXT_PUBLIC_ENV_B64=${{ secrets.ENV_NEXT_PUBLIC_B64_SERVERCOMPASS_DEMO }}
 
   deploy:
     needs: build
