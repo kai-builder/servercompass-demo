@@ -15,7 +15,7 @@ export default function Home() {
               ServerCompass Demo test auto deploy Branch Main update update
             </h1>
             <p className="text-lg text-gray-600 dark:text-gray-300">
-              Sample Next.js deployment with environment variables
+              Sample Next.js deployment with environment variables - trigger
             </p>
           </div>
 
